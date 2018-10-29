@@ -6,72 +6,88 @@ var mongoose = require('mongoose'),
 
 /* Create a user */
 exports.create_user = function(req, res) {
-   var user = new User(req.body);
-
-  /* Then save the user */
-  user.save(function(err) {
-    if(err) {
-      console.log(err);
-      res.status(400).send(err);
-    } else {
-      res.json(user);
+   var newUser = req.body;
+    if (!req.body.username) {
+        sendError("Invalid user input must provide a username.", res)
     }
-  });
+
+    connection((db) => {
+        db.collection('User')
+            .insertOne(newUser)
+            .then((user) => {
+                response.data = user;
+                res.json(response);
+            })
+            .catch((err) => {
+                sendError(err, res);
+            });
+    });
+};
+
+exports.display_all_users = function(req, res) {
+  /* send back the event as json from the request */
+  connection((db) => {
+        db.collection('User')
+            .find()
+            .toArray()
+            .then((users) => {
+                response.data = students;
+                res.json(response);
+            })
+            .catch((err) => {
+                sendError(err, res);
+            });
+    });
 };
 
 /* Show the current user */
 exports.display_user = function(req, res) {
   /* send back the event as json from the request */
-  res.json(req.user);
+  connection((db) => {
+            db.collection('User')
+                .findOne({ username: req.params.username })
+                .then((user) => {
+                    response.data = user;
+                    res.json(response);
+                })
+                .catch((err) => {
+                    sendError(err, res);
+                });
+        });
 };
 
 /* Update a user */
 exports.update_user = function(req, res) {
-  var user = req.user;
-  /* Replace the article's properties with the new properties found in req.body */
-  /* Save the article */
-  user.password = req.body.password;
-  user.email = req.body.email;
-  user.created_at = req.body.created_at;
-  user.updated_at = req.body.updated_at;
-  user.profile_img.data = fs.readFileSync(req.files.userPhoto.path);
-  user.profile_img.contentType = 'image/png';
-  // have to save now that we updated
-  user.save(function(err) {
-    if (err) {
-      console.log(err);
-      res.status(400).send(err);
-    } else {
-      res.json(user);
-    }
-  });
+        connection((db) => {
+            db.collection('User')
+                update({ username: req.params.username }, 
+                  { "$set": { password: req.body.password, email: req.body.email, 
+                  created_at: req.body.created_at, updated_at: req.body.updated_at,
+                  profile_img.data : fs.readFileSync(req.files.userPhoto.path),
+                  profile_img.contentType: 'image/png'}}).exec(function(err, user){
+                      if (err) {
+                        console.log(err);
+                        res.status(400).send(err);
+                      } else {
+                        res.json(user);
+                      }
+                    });
+        }
 };
 
 /* Delete a user */
 exports.delete_user = function(req, res) {
-  var user = req.user;
-
-  /* Remove the article */
-  user.remove(function(err) {
-    if (err) {
-      console.log(err);
-      res.status(400).send(err);
-    } else{
-      res.end();
-    }
-  })
-};
-
-/* Retreive all the directory users, sorted alphabetically by usrname */
-exports.display_all_users = function(req, res) {
-  /* Your code here */
-    User.find().sort('username').exec(function(err, users){
-      if(err){
-        res.status(400).send(err);
-      } else {
-        res.json(users);
-      }
-    });
+   connection((db) => {
+            db.collection('User')
+                .findOneAndRemove({ username: req.params.username) })
+                .then((user) => {
+                    response.data = req.params.username;
+                    res.json(response);
+                })
+                .catch((err) => {
+                    sendError(err, res);
+                });
+        });
 };
 
 /*
@@ -80,8 +96,8 @@ exports.display_all_users = function(req, res) {
         bind it to the request object as the property 'listing',
         then finally call next
  */
-exports.userByName = function(req, res, next, username) {
-  User.find(username).exec(function(err, user) {
+exports.UserByName = function(req, res, next, name) {
+  User.findOne(username:name).exec(function(err, user) {
     if(err) {
       res.status(400).send(err);
     } else {
