@@ -29,40 +29,88 @@ exports.read = function(req, res) {
 
 /* Update an event */
 exports.update = function(req, res) {
+
   var event = req.event;
-  /* Replace the article's properties with the new properties found in req.body */
-  /* Save the article */
-  event.organizer = req.body.organizer;
-  event.name = req.body.name;
-  event.address = req.body.address;
-  event.time = req.body.time;
-  event.price = req.body.price;
-  event.created_at = req.body.created_at;
-  event.updated_at = req.body.updated_at;
+  // IF the user is the organizer
+  if(req.body.username == req.body.organizer){
+    event.name = req.body.name;
+    event.address = req.body.address;
+    event.time = req.body.time;
+    event.price = req.body.price;
+    event.created_at = req.body.created_at;
+    event.updated_at = req.body.updated_at;
   // have to save now that we updated
-  event.save(function(err) {
-    if (err) {
-      console.log(err);
-      res.status(400).send(err);
-    } else {
-      res.json(event);
-    }
-  });
+    event.save(function(err) {
+      if (err) {
+        console.log(err);
+        res.status(400).send(err);
+      } else {
+        res.json(event);
+      }
+    });
+  }
+  //else if the user is admin
+  else{
+    connection((db) => {
+            db.collection('User')
+                .find({ username: req.body.username, admin: true})
+                .then((user) => {
+                    event.organizer = req.body.organizer
+                    event.name = req.body.name;
+                    event.address = req.body.address;
+                    event.time = req.body.time;
+                    event.price = req.body.price;
+                    event.created_at = req.body.created_at;
+                    event.updated_at = req.body.updated_at;
+                    event.save(function(err) {
+                      if (err) {
+                        console.log(err);
+                        res.status(400).send(err);
+                      } else {
+                        res.json(event);
+                      }
+                    });
+                  })
+                .catch((err) => {
+                    sendError(err, res);
+                });
+        });
+  }
+  
 };
 
 /* Delete a listing */
 exports.delete = function(req, res) {
   var event = req.event;
-
-  /* Remove the article */
-  event.remove(function(err) {
+  // if the user is the organizer
+  if(req.body.username == req.body.organizer){
+    event.remove(function(err) {
     if (err) {
       console.log(err);
       res.status(400).send(err);
     } else{
       res.end();
     }
-  })
+    });
+  }
+  //else if the user is admin
+  else{
+    connection((db) => {
+            db.collection('User')
+                .find({ username: req.body.username, admin: true})
+                .then((user) => {
+                    event.remove(function(err) {
+                      if (err) {
+                        console.log(err);
+                        res.status(400).send(err);
+                      } else{
+                        res.end();
+                      }
+                    });
+                });
+  }
+
+  
 };
 
 /* Retreive all the directory listings, sorted alphabetically by listing code */
