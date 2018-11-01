@@ -32,7 +32,7 @@ exports.update = function(req, res) {
 
   var event = req.event;
   // IF the user is the organizer
-  if(req.body.username == req.body.organizer){
+  if(req.body.username === req.body.organizer){
     event.name = req.body.name;
     event.address = req.body.address;
     event.time = req.body.time;
@@ -108,6 +108,7 @@ exports.delete = function(req, res) {
                       }
                     });
                 });
+    });
   }
 
   

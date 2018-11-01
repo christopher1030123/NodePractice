@@ -31,7 +31,7 @@ exports.display_all_users = function(req, res) {
             .find()
             .toArray()
             .then((users) => {
-                response.data = students;
+                response.data = users;
                 res.json(response);
             })
             .catch((err) => {
@@ -62,24 +62,24 @@ exports.update_user = function(req, res) {
             db.collection('User')
                 update({ username: req.params.username }, 
                   { "$set": { password: req.body.password, email: req.body.email, 
-                  created_at: req.body.created_at, updated_at: req.body.updated_at,
-                  profile_img.data : fs.readFileSync(req.files.userPhoto.path),
-                  profile_img.contentType: 'image/png'}}).exec(function(err, user){
+                  created_at: req.body.created_at, updated_at: req.body.updated_at}}).exec(function(err, user){
                       if (err) {
                         console.log(err);
                         res.status(400).send(err);
                       } else {
+                        user.profile_img.data = fs.readFileSync(req.files.userPhoto.path);
+                        user.profile_img.contentType = 'image/png';
                         res.json(user);
                       }
                     });
-        }
+        });
 };
 
 /* Delete a user */
 exports.delete_user = function(req, res) {
    connection((db) => {
             db.collection('User')
-                .findOneAndRemove({ username: req.params.username) })
+                .findOneAndRemove({ username: req.params.username })
                 .then((user) => {
                     response.data = req.params.username;
                     res.json(response);
@@ -147,8 +147,8 @@ exports.user_reigster = function (req, res, next) {
         bind it to the request object as the property 'listing',
         then finally call next
  */
-exports.UserByName = function(req, res, next, name) {
-  User.findOne(username:name).exec(function(err, user) {
+exports.userByName = function(req, res, next, name) {
+  User.findOne({username : name}).exec(function(err, user) {
     if(err) {
       res.status(400).send(err);
     } else {
